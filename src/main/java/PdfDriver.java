@@ -25,11 +25,11 @@ public class PdfDriver {
         Document document = new Document(PageSize.A3, 0, 0, 0, 0);
         PdfWriter.getInstance(document, new FileOutputStream(new Date().getTime() + ".pdf"));
         document.open();
-        document.add(createTable());
+        document.add(createTable(true));
         document.close();
     }
 
-    private static PdfPTable createTable() throws FileNotFoundException, DocumentException {
+    private static PdfPTable createTable(Boolean withColor) throws FileNotFoundException, DocumentException {
 
         float fntSize = 6.7f;
         Font font = FontFactory.getFont(FontFactory.TIMES_ROMAN, fntSize);
@@ -100,7 +100,9 @@ public class PdfDriver {
                         cell.setBorder(Rectangle.BOX);
                         cell.setRowspan(span);
                         cell.setPhrase(new Phrase(titles[new Random().nextInt(titles.length - 1)], font));
-                        cell.setBackgroundColor(fromHex(colors[weekdayPart % (colors.length - 2)]));
+                        if (withColor) {
+                            cell.setBackgroundColor(fromHex(colors[weekdayPart % (colors.length - 2)]));
+                        }
                         table.addCell(cell);
                     }
                 }
