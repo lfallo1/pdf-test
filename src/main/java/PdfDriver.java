@@ -22,16 +22,18 @@ public class PdfDriver {
     private static final DateFormat dateFormat = new SimpleDateFormat("EEE MM/dd/YYYY");
 
     public static void main(String[] args) throws DocumentException, FileNotFoundException {
-        Document document = new Document(PageSize.A3, 0, 0, 0, 0);
+        Document document = new Document(PageSize.A3, 0, 0, 60, 0);
         PdfWriter.getInstance(document, new FileOutputStream(new Date().getTime() + ".pdf"));
         document.open();
         document.add(createTable(true));
+        document.newPage();
+        document.add(createTable(false));
         document.close();
     }
 
     private static PdfPTable createTable(Boolean withColor) throws FileNotFoundException, DocumentException {
 
-        float fntSize = 6.7f;
+        float fntSize = 7.7f;
         Font font = FontFactory.getFont(FontFactory.TIMES_ROMAN, fntSize);
 
         //populate a hashmap, where the key is a string representing each day of the week & the value is the current row idx
@@ -60,13 +62,11 @@ public class PdfDriver {
                     //if a program content column, then set the header column value (weekday name + date)
                     if (weekdayPart > 0 && weekdayPart < 8) {
                         cell.setPhrase(new Phrase(dateFormat.format(calendar.getTime()), font));
-                    }
-                    table.addCell(cell);
 
-                    //increment day of week of not first or last column
-                    if (weekdayPart > 0 && weekdayPart < 9) {
+                        //increment day of week
                         calendar.add(Calendar.DAY_OF_WEEK, 1);
                     }
+                    table.addCell(cell);
                 } else {
                     //otherwise, set program content
                     cell.setColspan(1);
@@ -101,7 +101,7 @@ public class PdfDriver {
                         cell.setRowspan(span);
                         cell.setPhrase(new Phrase(titles[new Random().nextInt(titles.length - 1)], font));
                         if (withColor) {
-                            cell.setBackgroundColor(fromHex(colors[weekdayPart % (colors.length - 2)]));
+                            cell.setBackgroundColor(fromHex(colors[new Random().nextInt(colors.length - 2)]));
                         }
                         table.addCell(cell);
                     }
