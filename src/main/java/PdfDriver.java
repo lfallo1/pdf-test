@@ -5,80 +5,68 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Random;
 
 public class PdfDriver {
 
-    private static final String[] colors = new String[]{"#16E046", "#BFBFBF", "#FF9933", "#FFFF99", "#996633", "#FF99FF", "#FFFFFF"};
+    private static final String[] titles = new String[]{"2017 NASCAR on FOX: NASCAR Camping World Truck Series - Pre-Race (Talladega Superspeedway) (LIVE) - FOX",
+            "People's Court : 21030", "Divorce Court", "King of Queens", "Local News", "Maury", "Two Broke Girls", "College Football", "Paid Programming", "Paid Programming", "Jerry Springer"};
+    private static final String[] colors = new String[]{"#16E046", "#FF9933", "#FFFF99", "#996633", "#FF99FF", "#FFFFFF", "#BFBFBF"};
     private static final String[] weekdays = new String[]{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+    private static final DateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+    private static final DateFormat dateFormat = new SimpleDateFormat("EEE MM/dd/YYYY");
 
     public static void main(String[] args) throws DocumentException, FileNotFoundException {
-        createTable();
-
-        /*
-
-        Document document = new Document(PageSize.A3, 0, 0, 60, 0);
+        Document document = new Document(PageSize.A3, 0, 0, 0, 0);
         PdfWriter.getInstance(document, new FileOutputStream(new Date().getTime() + ".pdf"));
         document.open();
-        PdfPTable table = new PdfPTable(3);
-// the cell object
-        PdfPCell cell;
-// we add a cell with colspan 3
-        cell = new PdfPCell(new Phrase("Cell with colspan 3"));
-        cell.setColspan(3);
-        table.addCell(cell);
-// now we add a cell with rowspan 2
-        cell = new PdfPCell(new Phrase("Cell with rowspan 3"));
-        cell.setRowspan(3);
-        table.addCell(cell);
-// we add the four remaining cells with addCell()
-        table.addCell("row 1; cell 1");
-        PdfPCell cellRowSpan2 = new PdfPCell(new Phrase("cell with rowspan 2"));
-        cellRowSpan2.setRowspan(2);
-
-        table.addCell(cellRowSpan2);
-        table.addCell("row 2; cell 1");
-        table.addCell("row 3; cell 1");
-        table.addCell("row 3; cell 2");
-        document.add(table);
+        document.add(createTable());
         document.close();
-
-        */
     }
 
-    private static void createTable() throws FileNotFoundException, DocumentException {
+    private static PdfPTable createTable() throws FileNotFoundException, DocumentException {
 
-        Document document = new Document(PageSize.A3, 0, 0, 60, 0);
-        PdfWriter.getInstance(document, new FileOutputStream(new Date().getTime() + ".pdf"));
-        document.open();
+        float fntSize = 6.7f;
+        Font font = FontFactory.getFont(FontFactory.TIMES_ROMAN, fntSize);
 
+        //populate a hashmap, where the key is a string representing each day of the week & the value is the current row idx
         HashMap<String, Integer> dayPartMap = new HashMap<String, Integer>();
         for (String weekday : weekdays) {
             dayPartMap.put(weekday, 0);
         }
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR, 5);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
+        //set calendar object to monday at station's on-air time
+        Calendar calendar = getStartOfWeek();
+
         PdfPTable table = new PdfPTable(9);
         for (int daypart = 0; daypart < 25; daypart++) {
             for (int weekdayPart = 0; weekdayPart < 9; weekdayPart++) {
                 PdfPCell cell = new PdfPCell();
+                cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
 
                 //if first day part row, then set weekday names
                 if (daypart == 0) {
                     cell.setColspan(1);
                     cell.setRowspan(1);
                     cell.setBorder(Rectangle.BOX);
-                    cell.setBackgroundColor(fromHex(colors[1]));
+                    cell.setBackgroundColor(fromHex("#D3D3D3"));
+
+                    //if a program content column, then set the header column value (weekday name + date)
                     if (weekdayPart > 0 && weekdayPart < 8) {
-                        cell.setPhrase(new Phrase(weekdays[weekdayPart - 1]));
+                        cell.setPhrase(new Phrase(dateFormat.format(calendar.getTime()), font));
                     }
                     table.addCell(cell);
+
+                    //increment day of week of not first or last column
+                    if (weekdayPart > 0 && weekdayPart < 9) {
+                        calendar.add(Calendar.DAY_OF_WEEK, 1);
+                    }
                 } else {
                     //otherwise, set program content
                     cell.setColspan(1);
@@ -87,44 +75,59 @@ public class PdfDriver {
                     //if first or last column of program content, print daypart time slots
                     if (weekdayPart == 0 || weekdayPart == 8) {
                         cell.setBorder(Rectangle.BOX);
-                        cell.setBackgroundColor(fromHex(colors[1]));
-                        String time = formatZeroes(calendar.get(Calendar.HOUR)) + ":" + formatZeroes(calendar.get(Calendar.MINUTE));
-                        cell.setPhrase(new Phrase(time));
+                        cell.setBackgroundColor(fromHex("#D3D3D3"));
+                        cell.setPhrase(new Phrase(timeFormat.format(calendar.getTime()), font));
                         cell.setRowspan(1);
+                        cell.setPaddingTop(8);
+                        cell.setPaddingBottom(8);
                         table.addCell(cell);
 
                     } else if (dayPartMap.get(weekdays[weekdayPart - 1]) <= (daypart - 1)) {
                         //otherwise, print program details
 
                         //give a semi-random span to simulate programs with lengths longer than 30 minutes
-                        int span = daypart == 10 ? 3 : 1;
-                        dayPartMap.put(weekdays[weekdayPart - 1], dayPartMap.get(weekdays[weekdayPart - 1]) + span);
+                        int span = 1;
+                        if (daypart == 10) {
+                            span = 3;
+                        } else if (weekdayPart == 2 && daypart == 20) {
+                            span = Math.min(8, 25 - daypart);
+                        }
 
+                        //update the dayPartMap, with the current row index it has reached. it will be skipped on the
+                        //next iteration if the cell is already filled. iText PDF will automatically populate the next
+                        //cell in the correct slot, so we only need to be sure it is skipped if necessary
+                        dayPartMap.put(weekdays[weekdayPart - 1], dayPartMap.get(weekdays[weekdayPart - 1]) + span);
                         cell.setBorder(Rectangle.BOX);
                         cell.setRowspan(span);
-                        cell.setPhrase(new Phrase("title"));
-                        cell.setBackgroundColor(fromHex(colors[weekdayPart % (colors.length - 1)]));
+                        cell.setPhrase(new Phrase(titles[new Random().nextInt(titles.length - 1)], font));
+                        cell.setBackgroundColor(fromHex(colors[weekdayPart % (colors.length - 2)]));
                         table.addCell(cell);
                     }
                 }
             }
 
             if (daypart > 0) {
+                calendar.add(Calendar.DAY_OF_WEEK, -7);
                 calendar.add(Calendar.MINUTE, 30);
             }
         }
-        document.add(table);
-        document.close();
+
+        return table;
     }
 
     /**
-     * given a number, add a leading zero if less than ten
+     * given a station, return a calendar object set to Monday at the station's on-air time
      *
-     * @param val
      * @return
      */
-    private static String formatZeroes(int val) {
-        return val < 10 ? "0" + val : String.valueOf(val);
+    private static Calendar getStartOfWeek() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        calendar.set(Calendar.HOUR, 5);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar;
     }
 
     /**
