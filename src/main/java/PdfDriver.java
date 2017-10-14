@@ -46,7 +46,7 @@ public class PdfDriver {
         Calendar calendar = getStartOfWeek();
 
         PdfPTable table = new PdfPTable(9);
-        for (int daypart = 0; daypart < 25; daypart++) {
+        for (int daypart = 0; daypart < 145; daypart++) {
             for (int weekdayPart = 0; weekdayPart < 9; weekdayPart++) {
                 PdfPCell cell = new PdfPCell();
                 cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
@@ -55,7 +55,7 @@ public class PdfDriver {
                 //if first day part row, then set weekday names
                 if (daypart == 0) {
                     cell.setColspan(1);
-                    cell.setRowspan(1);
+                    cell.setRowspan(6);
                     cell.setBorder(Rectangle.BOX);
                     cell.setBackgroundColor(fromHex("#D3D3D3"));
 
@@ -73,24 +73,24 @@ public class PdfDriver {
 
 
                     //if first or last column of program content, print daypart time slots
-                    if (weekdayPart == 0 || weekdayPart == 8) {
+                    if ((daypart - 1) % 6 == 0 && (weekdayPart == 0 || weekdayPart == 8)) {
                         cell.setBorder(Rectangle.BOX);
                         cell.setBackgroundColor(fromHex("#D3D3D3"));
                         cell.setPhrase(new Phrase(timeFormat.format(calendar.getTime()), font));
-                        cell.setRowspan(1);
+                        cell.setRowspan(6);
                         cell.setPaddingTop(8);
                         cell.setPaddingBottom(8);
                         table.addCell(cell);
 
-                    } else if (dayPartMap.get(weekdays[weekdayPart - 1]) <= (daypart - 1)) {
+                    } else if (weekdayPart > 0 && weekdayPart < 8 && dayPartMap.get(weekdays[weekdayPart - 1]) <= (daypart - 1)) {
                         //otherwise, print program details
 
                         //give a semi-random span to simulate programs with lengths longer than 30 minutes
-                        int span = 1;
-                        if (daypart == 10) {
-                            span = 3;
-                        } else if (weekdayPart == 2 && daypart == 20) {
-                            span = Math.min(8, 25 - daypart);
+                        int span = 6;
+                        if (daypart == 61) {
+                            span = 18;
+                        } else if (weekdayPart == 2 && daypart == 121) {
+                            span = Math.min(48, 145 - daypart);
                         }
 
                         //update the dayPartMap, with the current row index it has reached. it will be skipped on the
@@ -108,7 +108,7 @@ public class PdfDriver {
                 }
             }
 
-            if (daypart > 0) {
+            if ((daypart - 1) % 6 == 0) {
                 calendar.add(Calendar.DAY_OF_WEEK, -7);
                 calendar.add(Calendar.MINUTE, 30);
             }
